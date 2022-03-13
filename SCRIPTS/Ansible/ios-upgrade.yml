@@ -3,6 +3,14 @@
 
 - name: Upgrade CISCO IOS 
   hosts: SWITCHES
+#connection:ansible.netcommon.network_cli or network_cli
+gather_facts:false
+
+#vars_propmts:
+#  -name:"primary-name"
+#  prompt:"Enter your name for this implem"
+#  private:no
+
 
   vars: 
     upgrade_ios_version: 12.2(55)SE12
@@ -25,48 +33,55 @@
 
 
 #check flash memory to hold image
-tasks:
-  - name: CHECK free Memory
-    cisco.ios.ios_facts:
-
-  - debug:
-      msg:
-        - "Current device free memory is {{ ansible_net_memfree_mb }}"
-        - "Size of new image is {{ new_ios_version_size }}"
-
-  - debug:
-      msg:
-        - "Remote Device has no enough memory for upgraded"
-
-    when: ansible_net_memfree_mb < new_ios_version_size
-
-fail:
-  msg: 'This device does not have enough flash memory to proceed.'
-  when: "ansible_net_filesystems_info | json_query('*.spacefree_kb')|int  <  new_ios_filesize|int"
-=======================
-name: Gather IOS Facts
-
-  ios_facts:
-
-  - debug:
-
-      msg:
-
-        - "Free space is {{ ansible_net_memfree_mb }}"
-
-  - name: DISPLAY IF SUFFICIENT SPACE IS THERE OR NOT
-
+#tasks:
+#  - name: CHECK free Memory
+#    cisco.ios.ios_facts:
+#
+#  - debug:
+#      msg:
+#        - "Current device free memory is {{ ansible_net_memfree_mb }}"
+#        - "Size of new image is {{ new_ios_version_size }}"
+#
+#  - debug:
+#      msg:
+#        - "Remote Device has no enough memory for upgraded"
+#
+#    when: ansible_net_memfree_mb < new_ios_version_size
+#
+#fail:
+#  msg: 'This device does not have enough flash memory to proceed.'
+#  when: "ansible_net_filesystems_info | json_query('*.spacefree_kb')|int  <  new_ios_filesize|int"
+#
+#name: Gather IOS Facts
+#
+#  ios_facts:
+#
+#  - debug:
+#
+#      msg:
+#
+#        - "Free space is {{ ansible_net_memfree_mb }}"
+#
+#  - name: DISPLAY IF SUFFICIENT SPACE IS THERE OR NOT
+#
+#    assert:
+#
+#      that:
+#
+#        - ansible_net_memfree_mb >= 5130
+#
+#      fail_msg: "THERE IS not SUFFICIENT SPACE TO COPY IMAGE. FREE UP SPACE FIRST"
+#
+#      success_msg: "THERE IS SUFFICIENT SPACE TO COPY IMAGE"
+#================
+#
+- name: Asset that there is enough flash space for upload
     assert:
-
       that:
-
-        - ansible_net_memfree_mb >= 5130
-
-      fail_msg: "THERE IS not SUFFICIENT SPACE TO COPY IMAGE. FREE UP SPACE FIRST"
-
-      success_msg: "THERE IS SUFFICIENT SPACE TO COPY IMAGE"
-================
-
+        - ansible_net_filesystems_info['flash:']['spacefree_kb'] > 37489
+      msg: "There is not enough space left on the device's flash"
+    tags:
+      - flash
 
 
 ## Create backup folder for today 
